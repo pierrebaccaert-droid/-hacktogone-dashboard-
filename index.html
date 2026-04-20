@@ -223,7 +223,7 @@ var COLS=[
 ];
 var COL_MAP={};COLS.forEach(function(c){COL_MAP[c.k]=c});
 
-var SHEET_URL="https://script.google.com/macros/s/AKfycbwi5HRh25g980aeyM3dUfoP8SflfPW-MP4l5gNV02ZzX8OPOrYSEcLJvMuJMU41dZxMwg/exec";
+var FB_URL="https://hacktogone-8e3ed-default-rtdb.firebaseio.com";
 function ld(){try{return JSON.parse(localStorage.getItem("hk_kanban3")||"{}")}catch(e){return{}}}
 function sv(s){localStorage.setItem("hk_kanban3",JSON.stringify(s))}
 var state=ld();
@@ -236,23 +236,31 @@ syncEl.textContent="\u2601 Connexion...";document.body.appendChild(syncEl);
 
 function showSync(msg,ok){syncEl.textContent=msg;syncEl.style.background=ok?"#f0fdf4":"#fef2f2";syncEl.style.color=ok?"#16a34a":"#dc2626";syncEl.style.borderColor=ok?"#bbf7d0":"#fecaca"}
 
-function pushToSheet(nom){
+// Firebase-safe key: replace . # $ [ ] / with _
+function fbKey(nom){return encodeURIComponent(nom).replace(/\./g,"%2E")}
+
+function pushToFB(nom){
   var s=state[nom]||{};
-  fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({nom:nom,col:s.col||"a_appeler",note:s.note||"",lastContact:s.lastContact||""})}).then(function(){showSync("\u2601 Synchro OK",true)}).catch(function(){showSync("\u26a0 Sync erreur",false)});
+  fetch(FB_URL+"/kanban/"+fbKey(nom)+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({col:s.col||"a_appeler",note:s.note||"",lastContact:s.lastContact||""})}).then(function(r){if(r.ok)showSync("\u2601 Synchro OK",true);else showSync("\u26a0 Erreur "+r.status,false)}).catch(function(){showSync("\u26a0 Hors ligne",false)});
 }
 
 function bulkPush(){
   showSync("\u2601 Upload...",true);
-  fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({bulk:true,state:state})}).then(function(){showSync("\u2601 Synchro OK",true)}).catch(function(){showSync("\u26a0 Sync erreur",false)});
+  var payload={};
+  Object.keys(state).forEach(function(nom){payload[fbKey(nom)]={col:state[nom].col||"a_appeler",note:state[nom].note||"",lastContact:state[nom].lastContact||""}});
+  fetch(FB_URL+"/kanban.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(function(r){if(r.ok)showSync("\u2601 Synchro OK",true);else showSync("\u26a0 Erreur "+r.status,false)}).catch(function(){showSync("\u26a0 Hors ligne",false)});
 }
 
-function pullFromSheet(){
-  fetch(SHEET_URL).then(function(r){return r.json()}).then(function(remote){
+function pullFromFB(){
+  fetch(FB_URL+"/kanban.json").then(function(r){return r.json()}).then(function(remote){
+    if(!remote){showSync("\u2601 En ligne (vide)",true);return}
     var changed=false;
-    Object.keys(remote).forEach(function(nom){
+    Object.keys(remote).forEach(function(key){
+      var nom=decodeURIComponent(key.replace(/%2E/g,"."));
       if(state[nom]){
-        if(remote[nom].col!==state[nom].col||remote[nom].note!==state[nom].note||remote[nom].lastContact!==state[nom].lastContact){
-          state[nom]=remote[nom];changed=true;
+        var r=remote[key];
+        if(r.col!==state[nom].col||r.note!==state[nom].note||r.lastContact!==state[nom].lastContact){
+          state[nom]={col:r.col,note:r.note,lastContact:r.lastContact};changed=true;
         }
       }
     });
@@ -262,8 +270,8 @@ function pullFromSheet(){
 
 // Initial sync: push local state then start polling
 bulkPush();
-setTimeout(pullFromSheet,3000);
-setInterval(pullFromSheet,15000);
+setTimeout(pullFromFB,3000);
+setInterval(pullFromFB,10000);
 
 var F={search:"",secteur:"",region:"",dept:"",icp:"",gsearch:"",gfield:""};
 var macroSects={"BtoB Tools / SaaS": 108, "Industrie & Supply Chain": 40, "IA / DeepTech": 32, "HealthTech / MedTech": 29, "FinTech": 20, "CleanTech / Énergie": 13, "Autres": 13, "MarTech / AdTech": 9, "AgriFood / FoodTech": 5, "HRTech": 2, "LegalTech": 1, "Mobilité / Transport": 1};
@@ -344,8 +352,8 @@ function priLabel(p){if(p.indexOf("P1")>=0)return"P1";if(p.indexOf("P2")>=0)retu
 function priClass(p){if(p.indexOf("P1")>=0)return"p1";if(p.indexOf("P2")>=0)return"p2";if(p.indexOf("P3")>=0)return"p3";if(p.indexOf("P4")>=0)return"p4";if(p.indexOf("rence")>=0)return"ref";return""}
 
 var dragNom=null;
-function moveCard(nom,toCol){state[nom].col=toCol;state[nom].lastContact=new Date().toLocaleDateString("fr-FR");sv(state);pushToSheet(nom);render()}
-function saveNote(nom,val){state[nom].note=val;sv(state);pushToSheet(nom)}
+function moveCard(nom,toCol){state[nom].col=toCol;state[nom].lastContact=new Date().toLocaleDateString("fr-FR");sv(state);pushToFB(nom);render()}
+function saveNote(nom,val){state[nom].note=val;sv(state);pushToFB(nom)}
 
 function render(){
   var filtered=getFiltered();
