@@ -244,17 +244,11 @@ function pushToFB(nom){
   fetch(FB_URL+"/kanban/"+fbKey(nom)+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({col:s.col||"a_appeler",note:s.note||"",lastContact:s.lastContact||""})}).then(function(r){if(r.ok)showSync("\u2601 Synchro OK",true);else showSync("\u26a0 Erreur "+r.status,false)}).catch(function(){showSync("\u26a0 Hors ligne",false)});
 }
 
-function bulkPush(){
-  showSync("\u2601 Upload...",true);
-  var payload={};
-  Object.keys(state).forEach(function(nom){payload[fbKey(nom)]={col:state[nom].col||"a_appeler",note:state[nom].note||"",lastContact:state[nom].lastContact||""}});
-  fetch(FB_URL+"/kanban.json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(function(r){if(r.ok)showSync("\u2601 Synchro OK",true);else showSync("\u26a0 Erreur "+r.status,false)}).catch(function(){showSync("\u26a0 Hors ligne",false)});
-}
-
-function pullFromFB(){
+function syncFromFB(){
   fetch(FB_URL+"/kanban.json").then(function(r){return r.json()}).then(function(remote){
-    if(!remote){showSync("\u2601 En ligne (vide)",true);return}
+    if(!remote) remote={};
     var changed=false;
+    // Firebase wins: apply remote state over local
     Object.keys(remote).forEach(function(key){
       var nom=decodeURIComponent(key.replace(/%2E/g,"."));
       if(state[nom]){
@@ -264,14 +258,22 @@ function pullFromFB(){
         }
       }
     });
+    // Push companies missing from Firebase (new entries only)
+    var missing={};var hasMissing=false;
+    CRM.forEach(function(d){
+      var key=fbKey(d.nom);
+      if(!remote[key]){missing[key]={col:state[d.nom].col||"a_appeler",note:state[d.nom].note||"",lastContact:state[d.nom].lastContact||""};hasMissing=true}
+    });
+    if(hasMissing){
+      fetch(FB_URL+"/kanban.json",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(missing)});
+    }
     if(changed){sv(state);render();showSync("\u2601 Mis \u00e0 jour",true)}else{showSync("\u2601 En ligne \u2014 "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),true)}
   }).catch(function(){showSync("\u26a0 Hors ligne",false)});
 }
 
-// Initial sync: push local state then start polling
-bulkPush();
-setTimeout(pullFromFB,3000);
-setInterval(pullFromFB,10000);
+// Initial sync: pull from Firebase first (Firebase = source of truth), then poll
+syncFromFB();
+setInterval(syncFromFB,10000);
 
 var F={search:"",secteur:"",region:"",dept:"",icp:"",gsearch:"",gfield:""};
 var macroSects={"BtoB Tools / SaaS": 108, "Industrie & Supply Chain": 40, "IA / DeepTech": 32, "HealthTech / MedTech": 29, "FinTech": 20, "CleanTech / Énergie": 13, "Autres": 13, "MarTech / AdTech": 9, "AgriFood / FoodTech": 5, "HRTech": 2, "LegalTech": 1, "Mobilité / Transport": 1};
