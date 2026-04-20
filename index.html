@@ -223,10 +223,47 @@ var COLS=[
 ];
 var COL_MAP={};COLS.forEach(function(c){COL_MAP[c.k]=c});
 
+var SHEET_URL="https://script.google.com/macros/s/AKfycbwi5HRh25g980aeyM3dUfoP8SflfPW-MP4l5gNV02ZzX8OPOrYSEcLJvMuJMU41dZxMwg/exec";
 function ld(){try{return JSON.parse(localStorage.getItem("hk_kanban3")||"{}")}catch(e){return{}}}
 function sv(s){localStorage.setItem("hk_kanban3",JSON.stringify(s))}
 var state=ld();
 CRM.forEach(function(d){if(!state[d.nom])state[d.nom]={col:"a_appeler",note:"",lastContact:""}});sv(state);
+
+// Sync indicator
+var syncEl=document.createElement("div");
+syncEl.id="syncStatus";syncEl.style.cssText="position:fixed;bottom:16px;right:16px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:9999;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:all .3s";
+syncEl.textContent="\u2601 Connexion...";document.body.appendChild(syncEl);
+
+function showSync(msg,ok){syncEl.textContent=msg;syncEl.style.background=ok?"#f0fdf4":"#fef2f2";syncEl.style.color=ok?"#16a34a":"#dc2626";syncEl.style.borderColor=ok?"#bbf7d0":"#fecaca"}
+
+function pushToSheet(nom){
+  var s=state[nom]||{};
+  fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({nom:nom,col:s.col||"a_appeler",note:s.note||"",lastContact:s.lastContact||""})}).then(function(){showSync("\u2601 Synchro OK",true)}).catch(function(){showSync("\u26a0 Sync erreur",false)});
+}
+
+function bulkPush(){
+  showSync("\u2601 Upload...",true);
+  fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({bulk:true,state:state})}).then(function(){showSync("\u2601 Synchro OK",true)}).catch(function(){showSync("\u26a0 Sync erreur",false)});
+}
+
+function pullFromSheet(){
+  fetch(SHEET_URL).then(function(r){return r.json()}).then(function(remote){
+    var changed=false;
+    Object.keys(remote).forEach(function(nom){
+      if(state[nom]){
+        if(remote[nom].col!==state[nom].col||remote[nom].note!==state[nom].note||remote[nom].lastContact!==state[nom].lastContact){
+          state[nom]=remote[nom];changed=true;
+        }
+      }
+    });
+    if(changed){sv(state);render();showSync("\u2601 Mis \u00e0 jour",true)}else{showSync("\u2601 En ligne \u2014 "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),true)}
+  }).catch(function(){showSync("\u26a0 Hors ligne",false)});
+}
+
+// Initial sync: push local state then start polling
+bulkPush();
+setTimeout(pullFromSheet,3000);
+setInterval(pullFromSheet,15000);
 
 var F={search:"",secteur:"",region:"",dept:"",icp:"",gsearch:"",gfield:""};
 var macroSects={"BtoB Tools / SaaS": 108, "Industrie & Supply Chain": 40, "IA / DeepTech": 32, "HealthTech / MedTech": 29, "FinTech": 20, "CleanTech / Énergie": 13, "Autres": 13, "MarTech / AdTech": 9, "AgriFood / FoodTech": 5, "HRTech": 2, "LegalTech": 1, "Mobilité / Transport": 1};
@@ -307,8 +344,8 @@ function priLabel(p){if(p.indexOf("P1")>=0)return"P1";if(p.indexOf("P2")>=0)retu
 function priClass(p){if(p.indexOf("P1")>=0)return"p1";if(p.indexOf("P2")>=0)return"p2";if(p.indexOf("P3")>=0)return"p3";if(p.indexOf("P4")>=0)return"p4";if(p.indexOf("rence")>=0)return"ref";return""}
 
 var dragNom=null;
-function moveCard(nom,toCol){state[nom].col=toCol;state[nom].lastContact=new Date().toLocaleDateString("fr-FR");sv(state);render()}
-function saveNote(nom,val){state[nom].note=val;sv(state)}
+function moveCard(nom,toCol){state[nom].col=toCol;state[nom].lastContact=new Date().toLocaleDateString("fr-FR");sv(state);pushToSheet(nom);render()}
+function saveNote(nom,val){state[nom].note=val;sv(state);pushToSheet(nom)}
 
 function render(){
   var filtered=getFiltered();
