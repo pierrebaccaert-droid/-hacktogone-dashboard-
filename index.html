@@ -87,6 +87,26 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;min-height:
 .kb-info .tag{font-size:9px;padding:3px 10px;border-radius:6px;background:#ede9fe;color:#7c3aed;font-weight:600}
 .kb-board{display:flex;gap:12px;flex:1;overflow-x:auto;padding-bottom:16px}
 .kb-board::-webkit-scrollbar{height:6px}.kb-board::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+.tab-section{margin-top:24px;background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden}
+.tab-bar{display:flex;border-bottom:2px solid #e2e8f0;background:#f8fafc}
+.tab-btn{padding:12px 24px;font-size:13px;font-weight:600;color:#64748b;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+.tab-btn:hover{color:#334155;background:#f1f5f9}
+.tab-btn.active{color:#6d28d9;border-bottom-color:#6d28d9;background:#fff}
+.tab-panel{display:none;padding:16px;overflow-x:auto}
+.tab-panel.active{display:block}
+.crm-table{width:100%;border-collapse:collapse;font-size:12px}
+.crm-table thead{position:sticky;top:0;z-index:2}
+.crm-table th{background:#f8fafc;color:#334155;font-weight:700;text-align:left;padding:10px 12px;border-bottom:2px solid #e2e8f0;white-space:nowrap;cursor:pointer}
+.crm-table th:hover{background:#e2e8f0}
+.crm-table td{padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#475569;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crm-table tr:hover td{background:#f8fafc}
+.crm-table .sc-badge{display:inline-block;padding:2px 8px;border-radius:10px;color:#fff;font-weight:700;font-size:11px}
+.crm-table .st-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#f1f5f9;color:#475569}
+.tab-panel.sheet-panel{padding:0}
+.tab-panel.sheet-panel iframe{width:100%;height:600px;border:none}
+.table-scroll{max-height:600px;overflow-y:auto}
+.table-scroll::-webkit-scrollbar{width:6px}.table-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+.sort-arrow{font-size:10px;margin-left:4px;color:#94a3b8}
 
 .kb-col{min-width:230px;max-width:270px;flex:1;display:flex;flex-direction:column;border-radius:14px;background:#fff;border:1.5px solid #e2e8f0;transition:all .25s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .kb-col.drag-over{border-color:#818cf8;box-shadow:0 0 0 3px rgba(129,140,248,.2),0 8px 24px rgba(79,70,229,.1);transform:scale(1.01)}
@@ -200,6 +220,38 @@ body{font-family:'Inter',sans-serif;background:#f1f5f9;color:#1e293b;min-height:
     <div class="kb-info"><span>Glisser-deposer les cartes entre colonnes &bull; Survoler pour les actions rapides</span><span class="tag">Drag &amp; Drop</span></div>
     <div class="kb-board"><div class="kb-col" id="col_a_appeler"><div class="col-hd"><div class="col-stripe" style="background:#4f6bed"></div><span class="col-icon">&#128222;</span><span class="col-title">A appeler</span><span class="col-cnt" style="background:#4f6bed;color:#fff">0</span></div><div class="kb-body"></div></div><div class="kb-col" id="col_en_cours"><div class="col-hd"><div class="col-stripe" style="background:#0ea5c9"></div><span class="col-icon">&#128172;</span><span class="col-title">En discussion</span><span class="col-cnt" style="background:#0ea5c9;color:#fff">0</span></div><div class="kb-body"></div></div><div class="kb-col" id="col_qualifie"><div class="col-hd"><div class="col-stripe" style="background:#16a34a"></div><span class="col-icon">&#9989;</span><span class="col-title">Lead qualifie</span><span class="col-cnt" style="background:#16a34a;color:#fff">0</span></div><div class="kb-body"></div></div><div class="kb-col" id="col_hesite"><div class="col-hd"><div class="col-stripe" style="background:#ca8a04"></div><span class="col-icon">&#129300;</span><span class="col-title">Interesse / hesite</span><span class="col-cnt" style="background:#ca8a04;color:#fff">0</span></div><div class="kb-body"></div></div><div class="kb-col" id="col_rdv"><div class="col-hd"><div class="col-stripe" style="background:#9333ea"></div><span class="col-icon">&#128197;</span><span class="col-title">RDV pris</span><span class="col-cnt" style="background:#9333ea;color:#fff">0</span></div><div class="kb-body"></div></div><div class="kb-col" id="col_gagne"><div class="col-hd"><div class="col-stripe" style="background:#059669"></div><span class="col-icon">&#127942;</span><span class="col-title">Gagne</span><span class="col-cnt" style="background:#059669;color:#fff">0</span></div><div class="kb-body"></div></div><div class="kb-col" id="col_pas_interesse"><div class="col-hd"><div class="col-stripe" style="background:#dc2626"></div><span class="col-icon">&#10060;</span><span class="col-title">Pas interesse</span><span class="col-cnt" style="background:#dc2626;color:#fff">0</span></div><div class="kb-body"></div></div><div class="kb-col" id="col_rappeler"><div class="col-hd"><div class="col-stripe" style="background:#ea580c"></div><span class="col-icon">&#128260;</span><span class="col-title">A rappeler</span><span class="col-cnt" style="background:#ea580c;color:#fff">0</span></div><div class="kb-body"></div></div></div>
   </div>
+
+  <div class="tab-section">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tabCRM">Tableau CRM complet</button>
+      <button class="tab-btn" data-tab="tabSheet">Google Sheet</button>
+    </div>
+    <div class="tab-panel active" id="tabCRM">
+      <div class="table-scroll">
+        <table class="crm-table" id="crmTable">
+          <thead><tr>
+            <th data-col="nom">Entreprise <span class="sort-arrow"></span></th>
+            <th data-col="score">Score <span class="sort-arrow"></span></th>
+            <th data-col="priorite">Priorite <span class="sort-arrow"></span></th>
+            <th data-col="statut">Statut <span class="sort-arrow"></span></th>
+            <th data-col="macro_secteur">Secteur <span class="sort-arrow"></span></th>
+            <th data-col="decideur">Decideur <span class="sort-arrow"></span></th>
+            <th data-col="tel">Telephone <span class="sort-arrow"></span></th>
+            <th data-col="region">Region <span class="sort-arrow"></span></th>
+            <th data-col="dept_label">Dept <span class="sort-arrow"></span></th>
+            <th data-col="icp">ICP <span class="sort-arrow"></span></th>
+            <th data-col="note">Note <span class="sort-arrow"></span></th>
+            <th data-col="lastContact">Dernier contact <span class="sort-arrow"></span></th>
+          </tr></thead>
+          <tbody id="crmTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-panel sheet-panel" id="tabSheet">
+      <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTaAjjNzxdd5BcpbUEMUn7j_jwpVn_7pO80ZgkVD3pwTaQ4zIwm2KJkQ_LvM9Zaw9iOnkZfni5BdAjg/pubhtml?widget=true&amp;headers=false"></iframe>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -470,6 +522,68 @@ function exportCSV(){
 }
 
 Chart.defaults.color="#64748b";Chart.defaults.borderColor="rgba(0,0,0,.06)";Chart.defaults.font.family="Inter";
+
+// Tabs
+document.querySelectorAll(".tab-btn").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    document.querySelectorAll(".tab-btn").forEach(function(b){b.classList.remove("active")});
+    document.querySelectorAll(".tab-panel").forEach(function(p){p.classList.remove("active")});
+    btn.classList.add("active");
+    document.getElementById(btn.getAttribute("data-tab")).classList.add("active");
+  });
+});
+
+// CRM Table
+var tSort={col:"score",asc:false};
+function renderTable(){
+  var filtered=getFiltered();
+  var rows=filtered.map(function(d){
+    var s=state[d.nom]||{};
+    return {nom:d.nom,score:d.score,priorite:d.priorite,statut:(COL_MAP[s.col]||{}).l||"A appeler",col:s.col||"a_appeler",macro_secteur:d.macro_secteur||"",decideur:(d.decideur||"").split("\n")[0],tel:d.tel||"",region:d.region||"",dept_label:d.dept_label||"",icp:d.icp||"",note:s.note||"",lastContact:s.lastContact||""};
+  });
+  rows.sort(function(a,b){
+    var va=a[tSort.col],vb=b[tSort.col];
+    if(typeof va==="number")return tSort.asc?va-vb:vb-va;
+    va=String(va).toLowerCase();vb=String(vb).toLowerCase();
+    return tSort.asc?va.localeCompare(vb):vb.localeCompare(va);
+  });
+  var tbody=document.getElementById("crmTbody");tbody.innerHTML="";
+  rows.forEach(function(r){
+    var colInfo=COL_MAP[r.col]||{c:"#4f6bed"};
+    var tr=document.createElement("tr");
+    tr.innerHTML='<td><strong>'+esc(r.nom)+'</strong></td>'+
+      '<td><span class="sc-badge" style="background:'+scCol(r.score)+'">'+r.score+'</span></td>'+
+      '<td><span class="pri-'+priClass(r.priorite)+'">'+priLabel(r.priorite)+'</span></td>'+
+      '<td><span class="st-badge" style="background:'+colInfo.c+'20;color:'+colInfo.c+'">'+esc(r.statut)+'</span></td>'+
+      '<td>'+esc(r.macro_secteur)+'</td>'+
+      '<td>'+esc(r.decideur)+'</td>'+
+      '<td>'+esc(r.tel)+'</td>'+
+      '<td>'+esc(r.region)+'</td>'+
+      '<td>'+esc(r.dept_label)+'</td>'+
+      '<td>'+esc(r.icp)+'</td>'+
+      '<td>'+esc(r.note)+'</td>'+
+      '<td>'+esc(r.lastContact)+'</td>';
+    tbody.appendChild(tr);
+  });
+  // Update sort arrows
+  document.querySelectorAll(".crm-table th").forEach(function(th){
+    var arrow=th.querySelector(".sort-arrow");
+    if(th.getAttribute("data-col")===tSort.col){arrow.textContent=tSort.asc?"\u25b2":"\u25bc"}else{arrow.textContent=""}
+  });
+}
+
+document.querySelectorAll(".crm-table th").forEach(function(th){
+  th.addEventListener("click",function(){
+    var col=th.getAttribute("data-col");
+    if(tSort.col===col){tSort.asc=!tSort.asc}else{tSort.col=col;tSort.asc=true}
+    renderTable();
+  });
+});
+
+// Patch render to also update table
+var origRender=render;
+render=function(){origRender();renderTable()};
+
 render();
 
 </script>
