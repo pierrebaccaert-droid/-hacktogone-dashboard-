@@ -291,19 +291,23 @@ function showSync(msg,ok){syncEl.textContent=msg;syncEl.style.background=ok?"#f0
 // Firebase-safe key: replace . # $ [ ] / with _
 function fbKey(nom){return encodeURIComponent(nom).replace(/\./g,"%2E")}
 
+var recentPush={};
 function pushToFB(nom){
   var s=state[nom]||{};
+  recentPush[nom]=Date.now();
   fetch(FB_URL+"/kanban/"+fbKey(nom)+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({col:s.col||"a_appeler",note:s.note||"",lastContact:s.lastContact||""})}).then(function(r){if(r.ok)showSync("\u2601 Synchro OK",true);else showSync("\u26a0 Erreur "+r.status,false)}).catch(function(){showSync("\u26a0 Hors ligne",false)});
 }
 
 function syncFromFB(){
+  if(dragNom)return;
   fetch(FB_URL+"/kanban.json").then(function(r){return r.json()}).then(function(remote){
     if(!remote) remote={};
     var changed=false;
-    // Firebase wins: apply remote state over local
+    // Firebase wins: apply remote state over local (skip entries modified in last 15s)
+    var now=Date.now();
     Object.keys(remote).forEach(function(key){
       var nom=decodeURIComponent(key.replace(/%2E/g,"."));
-      if(state[nom]){
+      if(state[nom]&&(!recentPush[nom]||now-recentPush[nom]>15000)){
         var r=remote[key];
         if(r.col!==state[nom].col||r.note!==state[nom].note||r.lastContact!==state[nom].lastContact){
           state[nom]={col:r.col,note:r.note,lastContact:r.lastContact};changed=true;
