@@ -286,7 +286,8 @@ var syncEl=document.createElement("div");
 syncEl.id="syncStatus";syncEl.style.cssText="position:fixed;bottom:16px;right:16px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:9999;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:all .3s";
 syncEl.textContent="\u2601 Connexion...";document.body.appendChild(syncEl);
 
-function showSync(msg,ok){syncEl.textContent=msg;syncEl.style.background=ok?"#f0fdf4":"#fef2f2";syncEl.style.color=ok?"#16a34a":"#dc2626";syncEl.style.borderColor=ok?"#bbf7d0":"#fecaca"}
+var syncTimer=null;
+function showSync(msg,ok){syncEl.textContent=msg;syncEl.style.background=ok?"#f0fdf4":"#fef2f2";syncEl.style.color=ok?"#16a34a":"#dc2626";syncEl.style.borderColor=ok?"#bbf7d0":"#fecaca";if(syncTimer)clearTimeout(syncTimer);if(ok&&msg.indexOf("Mis")>=0){syncTimer=setTimeout(function(){showSync("\u2601 En ligne \u2014 "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),true)},3000)}}
 
 // Firebase-safe key: replace . # $ [ ] / with _
 function fbKey(nom){return encodeURIComponent(nom).replace(/\./g,"%2E")}
@@ -312,14 +313,17 @@ function syncFromFB(){
         state[nom]={col:r.col,note:r.note,lastContact:r.lastContact};changed=true;
       }
     });
-    // Push companies missing from Firebase (new entries only)
-    var missing={};var hasMissing=false;
-    CRM.forEach(function(d){
-      var key=fbKey(d.nom);
-      if(!remote[key]){missing[key]={col:state[d.nom].col||"a_appeler",note:state[d.nom].note||"",lastContact:state[d.nom].lastContact||""};hasMissing=true}
-    });
-    if(hasMissing){
-      fetch(FB_URL+"/kanban.json",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(missing)});
+    // Push companies missing from Firebase (first sync only)
+    if(!syncFromFB._didMissing){
+      syncFromFB._didMissing=true;
+      var missing={};var hasMissing=false;
+      CRM.forEach(function(d){
+        var key=fbKey(d.nom);
+        if(!remote[key]){missing[key]={col:state[d.nom].col||"a_appeler",note:state[d.nom].note||"",lastContact:state[d.nom].lastContact||""};hasMissing=true}
+      });
+      if(hasMissing){
+        fetch(FB_URL+"/kanban.json",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(missing)});
+      }
     }
     if(changed){sv(state);render();showSync("\u2601 Mis \u00e0 jour",true)}else{showSync("\u2601 En ligne \u2014 "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}),true)}
   }).catch(function(){showSync("\u26a0 Hors ligne",false)});
