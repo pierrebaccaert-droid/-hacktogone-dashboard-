@@ -296,7 +296,7 @@ var localEdited={};
 function pushToFB(nom){
   var s=state[nom]||{};
   localEdited[nom]=true;
-  fetch(FB_URL+"/kanban/"+fbKey(nom)+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({col:s.col||"a_appeler",note:s.note||"",lastContact:s.lastContact||""})}).then(function(r){if(r.ok)showSync("\u2601 Synchro OK",true);else showSync("\u26a0 Erreur "+r.status,false)}).catch(function(){showSync("\u26a0 Hors ligne",false)});
+  fetch(FB_URL+"/kanban/"+fbKey(nom)+".json",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({col:s.col||"a_appeler",note:s.note||"",lastContact:s.lastContact||"",hidden:s.hidden||false})}).then(function(r){if(r.ok)showSync("\u2601 Synchro OK",true);else showSync("\u26a0 Erreur "+r.status,false)}).catch(function(){showSync("\u26a0 Hors ligne",false)});
 }
 
 function syncFromFB(){
@@ -389,6 +389,7 @@ gsClear.addEventListener("click",function(){
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function getFiltered(){
   return CRM.filter(function(d){
+    if(state[d.nom]&&state[d.nom].hidden)return false;
     if(F.search&&d.nom.toLowerCase().indexOf(F.search)<0&&(d.decideur||"").toLowerCase().indexOf(F.search)<0)return false;
     if(F.secteur&&d.macro_secteur!==F.secteur)return false;
     if(F.region&&d.region!==F.region)return false;
@@ -414,6 +415,7 @@ function priClass(p){if(p.indexOf("P1")>=0)return"p1";if(p.indexOf("P2")>=0)retu
 var dragNom=null;
 function moveCard(nom,toCol){state[nom].col=toCol;state[nom].lastContact=new Date().toLocaleDateString("fr-FR");sv(state);pushToFB(nom);render()}
 function saveNote(nom,val){state[nom].note=val;sv(state);pushToFB(nom)}
+function hideCard(nom){if(!confirm("Supprimer "+nom+" du dashboard ?"))return;state[nom].hidden=true;sv(state);pushToFB(nom);localEdited[nom]=true;render()}
 
 function render(){
   var filtered=getFiltered();
@@ -490,6 +492,10 @@ function render(){
         btn.addEventListener("click",function(e){e.stopPropagation();moveCard(d.nom,tc.k)});
         actDiv.appendChild(btn);
       });
+      var delBtn=document.createElement("button");delBtn.className="kc-btn";delBtn.title="Supprimer";delBtn.textContent="\ud83d\uddd1";
+      delBtn.style.cssText="--bc:#dc2626";
+      delBtn.addEventListener("click",function(e){e.stopPropagation();hideCard(d.nom)});
+      actDiv.appendChild(delBtn);
       body.appendChild(card);
     });
   });
